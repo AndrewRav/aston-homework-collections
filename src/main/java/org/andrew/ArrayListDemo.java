@@ -1,53 +1,170 @@
 package org.andrew;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
 public class ArrayListDemo<E> {
     private static final int DEFAULT_CAPACITY = 10;
-    E[] elementData;
+    private static final Object[] EMPTY_ELEMENT_DATA = {};
+    private static final Object[] DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA = {};
+    public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
+    Object[] elementData;
     private int size;
 
-    private E[] grow(int minCapacity) { // Увеличение массива
-
-        return elementData;
+    public ArrayListDemo(int initialCapacity) {
+        if (initialCapacity > 0) {
+            this.elementData = new Object[initialCapacity];
+        } else if (initialCapacity == 0) {
+            this.elementData = EMPTY_ELEMENT_DATA;
+        } else {
+            throw new IllegalArgumentException("Illegal Capacity: "+ initialCapacity);
+        }
     }
 
-    private E[] grow() {
+    public ArrayListDemo() {
+        this.elementData = DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA;
+    }
+
+    public ArrayListDemo(Collection <? extends E> newCollection) {
+        Object[] newArray = newCollection.toArray();
+        if ((size = newArray.length) != 0) {
+            elementData = Arrays.copyOf(newArray, size, Object[].class);
+        } else {
+            elementData = EMPTY_ELEMENT_DATA;
+        }
+    }
+
+    private Object[] grow(int minCapacity) { // Увеличение массива
+        int oldCapacity = elementData.length;
+        if (oldCapacity > 0 || elementData != DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA) {
+            int newCapacity = newLength(oldCapacity, minCapacity - oldCapacity, oldCapacity >> 1);
+            return elementData = Arrays.copyOf(elementData, newCapacity);
+        } else {
+            return elementData = new Object[Math.max(DEFAULT_CAPACITY, minCapacity)];
+        }
+    }
+
+    public static int newLength(int oldLength, int minGrowth, int prefGrowth) {
+        int prefLength = oldLength + Math.max(minGrowth, prefGrowth);
+        if (0 < prefLength && prefLength <= SOFT_MAX_ARRAY_LENGTH) {
+            return prefLength;
+        } else {
+            int minLength = oldLength + minGrowth;
+            if (minLength < 0) {
+                throw new OutOfMemoryError("Длина массива " + oldLength + " + " + minGrowth + " меньше нуля");
+            } else return Math.max(minLength, SOFT_MAX_ARRAY_LENGTH);
+        }
+    }
+
+    private Object[] grow() {
         return grow(size + 1);
     }
 
-    private void add(E newElement, E[] elementData, int realSize) {
+    private void add(E newElement, Object[] elementData, int realSize) {
+        if (realSize == elementData.length) {
+            elementData = grow();
+        }
 
+        elementData[realSize] = newElement;
+        size = realSize + 1;
     }
 
-    public boolean add(E newElement) { // Простое добавление элемента в конец
-
-        return true;
+    public void add(E newElement) { // Простое добавление элемента в коне
+        add(newElement, elementData, size);
     }
 
     public void add(E newElement, int index) { // Добавление элемента в место по индексу
+        rangeCheck(index);
+        final int s;
+        Object[] elementData;
+        if ((s = size) == (elementData = this.elementData).length) {
+            elementData = grow();
+        }
 
+        System.arraycopy(elementData, index, elementData, index + 1, s - index);
+        elementData[index] = newElement;
+        size = s + 1;
+    }
+
+    private void rangeCheck(int index) {
+        if (index > size || index < 0){
+            throw new IndexOutOfBoundsException();
+        }
     }
 
     public E get(int index) {
         Objects.checkIndex(index, size); // Проверка, что индекс находится в диапазоне
-        return elementData[index];
+        return (E) elementData[index];
     }
 
-    public void remove(int index) { // Удаление по индексу
+    private void fastRemove(Object[] elements, int i) {
+        final int newSize;
+        if ((newSize = size - 1) > i) {
+            System.arraycopy(elements, i + 1, elements, i, newSize - i);
+        }
+        elements[size = newSize] = null;
+    }
+
+    public E remove(int index) { // Удаление по индексу
         Objects.checkIndex(index, size);
+        final Object[] elements = elementData;
+        E oldValue = (E) elements[index];
+        fastRemove(elements, index);
+        return oldValue;
     }
 
     public void remove(E elementToDelete) { // Удаление по объекту
-
+        final Object[] elements = elementData;
+        final int size = this.size;
+        int i = 0;
+            if (elementToDelete == null) {
+                for (; i < size; i++)
+                    if (elements[i] == null)
+                        break;
+            } else {
+                for (; i < size; i++)
+                    if (elementToDelete.equals(elements[i]))
+                        break;
+            }
+        fastRemove(elements, i);
     }
 
-    public void addAll(Collection <? extends E> newCollection) { // Добавление коллекции
+    public boolean addAll(Collection <? extends E> newCollection) { // Добавление коллекции
+        Object[] newArray = newCollection.toArray();
+        int numNew = newArray.length;
+        if (numNew == 0)
+            return false;
 
+        Object[] elementData;
+        final int s;
+        if (numNew > (elementData = this.elementData).length - (s = size)) {
+            elementData = grow(s + numNew);
+        }
+
+        System.arraycopy(newArray, 0, elementData, s, numNew);
+        size = s + numNew;
+        return true;
     }
 
-    public void addAll(Collection <? extends E> newCollection, int index) { // Добавление коллекции по индексу
+    public boolean addAll(Collection <? extends E> newCollection, int index) { // Добавление коллекции по индексу
+        rangeCheck(index);
+        Object[] newArray = newCollection.toArray();
+        int numNew = newArray.length;
+        if (numNew == 0)
+            return false;
 
+        Object[] elementData;
+        final int s;
+        if (numNew > (elementData = this.elementData).length - (s = size)) {
+            elementData = grow(s + numNew);
+        }
+
+        int numMoved = s - index;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index, elementData, index + numNew, numMoved);
+        System.arraycopy(newArray, 0, elementData, index, numNew);
+        size = s + numNew;
+        return true;
     }
 }
