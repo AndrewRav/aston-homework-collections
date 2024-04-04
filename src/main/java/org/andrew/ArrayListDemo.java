@@ -2,16 +2,27 @@ package org.andrew;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
 
-public class ArrayListDemo<E> {
-    private static final int DEFAULT_CAPACITY = 10;
-    private static final Object[] EMPTY_ELEMENT_DATA = {};
-    private static final Object[] DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA = {};
+/*                                              Дз коллекции
+Необходимо написать свою реализацию коллекции на выбор LinkedList или ArrayList (можно оба варианта).
+— Должны быть основные методы add, get, remove, addAll(ДругаяКоллекция параметр), остальное на ваше усмотрение.
+— Плюс написать реализацию сортировки пузырьком с флагом, который прекращает сортировку, если коллекция уже отсортирована.
+— Задание с *: На тему дженериков. Для этих коллекций сделать конструктор,
+который будет принимать другую коллекцию в качестве параметров и инициализироваться с элементами из этой коллекции.
+— Вторая часть - сделать метод сортировки статическим, этот метод также будет принимать какую-то коллекцию и сортировать ее.
+(Аналогия Collections.sort()). Т.е подумать на тему какое ключевое слово(extends или super) будет лучше применить для этих двух задач.
+*/
+
+public class ArrayListDemo<E extends Comparable<E>> {
+    private static final int DEFAULT_CAPACITY = 10; // Дефолтный размер в 10 символов
+    private static final Object[] EMPTY_ELEMENT_DATA = {}; // Пустой массив
     public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
     Object[] elementData;
-    private int size;
+    private int size; // Действительное количество элементов в списочном массиве
 
+    // Конструктор, который создаёт списочный массив, имеющий заданную начальную ёмкость
     public ArrayListDemo(int initialCapacity) {
         if (initialCapacity > 0) {
             this.elementData = new Object[initialCapacity];
@@ -22,10 +33,13 @@ public class ArrayListDemo<E> {
         }
     }
 
+    // Конструктор, который по дефолту создаёт пустой списочный массив объёмом в 10 элементов
     public ArrayListDemo() {
-        this.elementData = DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA;
+        this.elementData = new Object[DEFAULT_CAPACITY];
     }
 
+    // Конструктор, который создаёт коллекцию на базе другой коллекции.
+    // Инициализируется элементами из переданной коллекции
     public ArrayListDemo(Collection <? extends E> newCollection) {
         Object[] newArray = newCollection.toArray();
         if ((size = newArray.length) != 0) {
@@ -37,7 +51,7 @@ public class ArrayListDemo<E> {
 
     private Object[] grow(int minCapacity) { // Увеличение массива
         int oldCapacity = elementData.length;
-        if (oldCapacity > 0 || elementData != DEFAULT_CAPACITY_EMPTY_ELEMENT_DATA) {
+        if (oldCapacity > 0) {
             int newCapacity = newLength(oldCapacity, minCapacity - oldCapacity, oldCapacity >> 1);
             return elementData = Arrays.copyOf(elementData, newCapacity);
         } else {
@@ -53,7 +67,8 @@ public class ArrayListDemo<E> {
             int minLength = oldLength + minGrowth;
             if (minLength < 0) {
                 throw new OutOfMemoryError("Длина массива " + oldLength + " + " + minGrowth + " меньше нуля");
-            } else return Math.max(minLength, SOFT_MAX_ARRAY_LENGTH);
+            } else
+                return Math.max(minLength, SOFT_MAX_ARRAY_LENGTH);
         }
     }
 
@@ -61,7 +76,7 @@ public class ArrayListDemo<E> {
         return grow(size + 1);
     }
 
-    private void add(E newElement, Object[] elementData, int realSize) {
+    private void add(E newElement, Object[] elementData, int realSize) { // Простое добавление элемента в конец
         if (realSize == elementData.length) {
             elementData = grow();
         }
@@ -70,7 +85,7 @@ public class ArrayListDemo<E> {
         size = realSize + 1;
     }
 
-    public void add(E newElement) { // Простое добавление элемента в коне
+    public void add(E newElement) {
         add(newElement, elementData, size);
     }
 
@@ -88,7 +103,7 @@ public class ArrayListDemo<E> {
     }
 
     private void rangeCheck(int index) {
-        if (index > size || index < 0){
+        if (index > size || index < 0) {
             throw new IndexOutOfBoundsException();
         }
     }
@@ -98,6 +113,7 @@ public class ArrayListDemo<E> {
         return (E) elementData[index];
     }
 
+    // Сдвигаем элементы влево и удаляем элемент определяя его как null
     private void fastRemove(Object[] elements, int i) {
         final int newSize;
         if ((newSize = size - 1) > i) {
@@ -161,10 +177,44 @@ public class ArrayListDemo<E> {
         }
 
         int numMoved = s - index;
-        if (numMoved > 0)
+        if (numMoved > 0) {
             System.arraycopy(elementData, index, elementData, index + numNew, numMoved);
+        }
         System.arraycopy(newArray, 0, elementData, index, numNew);
         size = s + numNew;
         return true;
     }
+
+    // Сортировка массива пузырьком (только Number)
+    public static <E extends Comparable<? super E>> E[] sort(Collection <? extends Number> collectionToSort) {
+        E[] array = (E[]) collectionToSort.toArray();
+
+        boolean isSorted = false;
+        E temp;
+        while(!isSorted) {
+            isSorted = true;
+            for (int i = 0; i < array.length - 1; i++) {
+                if ((array[i].compareTo(array[i + 1])) > 0) {
+                    isSorted = false;
+                    temp = array[i];
+                    array[i] = array[i + 1];
+                    array[i + 1] = temp;
+                }
+            }
+        }
+        return array;
+    }
+
+    // Метод для проверки, отсортирован ли массив
+    public static <E extends Comparable<? super E>> boolean checkIsSorted(
+            Collection <? extends Number> collectionToCheck) {
+
+        E[] array = (E[]) collectionToCheck.toArray();
+        for (int i = 0; i < array.length - 1; i++) {
+            if ((array[i].compareTo(array[i + 1])) > 0)
+                return false;
+        }
+        return true;
+    }
+
 }
