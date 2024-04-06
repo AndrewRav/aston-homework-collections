@@ -2,7 +2,6 @@ package org.andrew;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Objects;
 
 /*                                              Дз коллекции
@@ -15,12 +14,11 @@ import java.util.Objects;
 (Аналогия Collections.sort()). Т.е подумать на тему какое ключевое слово(extends или super) будет лучше применить для этих двух задач.
 */
 
-public class ArrayListDemo<E extends Comparable<E>> {
+public class ArrayListDemo<E> {
     private static final int DEFAULT_CAPACITY = 10; // Дефолтный размер в 10 символов
     private static final Object[] EMPTY_ELEMENT_DATA = {}; // Пустой массив
-    public static final int SOFT_MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
     Object[] elementData;
-    private int size; // Действительное количество элементов в списочном массиве
+    public int size; // Действительное количество элементов в списочном массиве
 
     // Конструктор, который создаёт списочный массив, имеющий заданную начальную ёмкость
     public ArrayListDemo(int initialCapacity) {
@@ -29,7 +27,7 @@ public class ArrayListDemo<E extends Comparable<E>> {
         } else if (initialCapacity == 0) {
             this.elementData = EMPTY_ELEMENT_DATA;
         } else {
-            throw new IllegalArgumentException("Illegal Capacity: "+ initialCapacity);
+            throw new IllegalArgumentException("Неизвестная ёмкость: " + initialCapacity);
         }
     }
 
@@ -51,25 +49,8 @@ public class ArrayListDemo<E extends Comparable<E>> {
 
     private Object[] grow(int minCapacity) { // Увеличение массива
         int oldCapacity = elementData.length;
-        if (oldCapacity > 0) {
-            int newCapacity = newLength(oldCapacity, minCapacity - oldCapacity, oldCapacity >> 1);
-            return elementData = Arrays.copyOf(elementData, newCapacity);
-        } else {
-            return elementData = new Object[Math.max(DEFAULT_CAPACITY, minCapacity)];
-        }
-    }
-
-    public static int newLength(int oldLength, int minGrowth, int prefGrowth) {
-        int prefLength = oldLength + Math.max(minGrowth, prefGrowth);
-        if (0 < prefLength && prefLength <= SOFT_MAX_ARRAY_LENGTH) {
-            return prefLength;
-        } else {
-            int minLength = oldLength + minGrowth;
-            if (minLength < 0) {
-                throw new OutOfMemoryError("Длина массива " + oldLength + " + " + minGrowth + " меньше нуля");
-            } else
-                return Math.max(minLength, SOFT_MAX_ARRAY_LENGTH);
-        }
+        int newCapacity = oldCapacity + (minCapacity - oldCapacity) + (oldCapacity / 2);
+        return elementData = Arrays.copyOf(elementData, newCapacity);
     }
 
     private Object[] grow() {
@@ -187,7 +168,8 @@ public class ArrayListDemo<E extends Comparable<E>> {
 
     // Сортировка массива пузырьком (только Number)
     public static <E extends Comparable<? super E>> E[] sort(Collection <? extends Number> collectionToSort) {
-        E[] array = (E[]) collectionToSort.toArray();
+        E[] array = (E[]) new Comparable[collectionToSort.size()];
+        array = collectionToSort.toArray(array);
 
         boolean isSorted = false;
         E temp;
@@ -206,15 +188,11 @@ public class ArrayListDemo<E extends Comparable<E>> {
     }
 
     // Метод для проверки, отсортирован ли массив
-    public static <E extends Comparable<? super E>> boolean checkIsSorted(
-            Collection <? extends Number> collectionToCheck) {
-
-        E[] array = (E[]) collectionToCheck.toArray();
+    public static <E extends Comparable<? super E>> boolean checkIsSorted(E[] array) {
         for (int i = 0; i < array.length - 1; i++) {
             if ((array[i].compareTo(array[i + 1])) > 0)
                 return false;
         }
         return true;
     }
-
 }
